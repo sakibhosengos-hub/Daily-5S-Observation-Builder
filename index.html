@@ -107,6 +107,55 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 }
 .cell-fields textarea { resize: none; min-height: 52px; }
 
+/* ── CAPTION PICKER ─────────────────────────────────────────────── */
+.caption-field-wrap { position: relative; }
+.caption-display {
+  width: 100%; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 6px 30px 6px 9px; font-size: 12px; font-family: inherit; color: #334155;
+  min-height: 52px; cursor: pointer; background: white;
+  display: flex; align-items: flex-start; gap: 4px; flex-wrap: wrap;
+  transition: border-color 0.2s; line-height: 1.5; word-break: break-word;
+  position: relative;
+}
+.caption-display:hover { border-color: #2176b5; background: #f8fafc; }
+.caption-display.has-value { border-color: #4a90d9; }
+.caption-display .placeholder-txt { color: #94a3b8; font-style: italic; font-size: 11px; }
+.caption-display .chev {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  color: #94a3b8; font-size: 13px; pointer-events: none;
+}
+
+.caption-dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: white; border: 1px solid #cbd5e1; border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.13); z-index: 1000;
+  overflow: hidden; max-height: 220px; overflow-y: auto;
+}
+.caption-dropdown.open { display: block; }
+.caption-dropdown-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 10px; background: #1a4a7a;
+  font-size: 10px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em;
+  position: sticky; top: 0; z-index: 2;
+}
+.caption-clear-btn {
+  background: none; border: none; color: #fbbf24; font-size: 10px;
+  cursor: pointer; font-family: inherit; font-weight: 600; padding: 0;
+}
+.caption-clear-btn:hover { text-decoration: underline; }
+.caption-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; cursor: pointer; font-size: 11.5px; color: #334155;
+  transition: background 0.12s; border-bottom: 1px solid #f1f5f9; gap: 8px;
+}
+.caption-option:last-child { border-bottom: none; }
+.caption-option:hover { background: #eff6ff; color: #1d4ed8; }
+.caption-option.selected { background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+.caption-option .opt-num { color: #94a3b8; font-size: 10px; flex-shrink: 0; min-width: 20px; }
+.caption-option .opt-check { color: #2176b5; font-size: 13px; flex-shrink: 0; opacity: 0; }
+.caption-option.selected .opt-check { opacity: 1; }
+/* ──────────────────────────────────────────────────────────────── */
+
 /* ── RECENT SUGGESTIONS ─────────────────────────────────────────── */
 .line-field-wrap { position: relative; }
 
@@ -464,6 +513,120 @@ function removeCell(slideId, cellId) {
   if (s) { s.cells = s.cells.filter(c => c.id !== cellId); renderAll(); }
 }
 
+// ── CAPTION OPTIONS ───────────────────────────────────────────────────────
+const CAPTION_OPTIONS = [
+  "All the indication board & poster maintaining the standard",
+  "Input trolley & In-line cupboard labelling & demarcation standard",
+  "Input trolley WIP & Accessories WIP check",
+  "Thread keeping standard",
+  "Sharp tool register update",
+  "File, Register book & Requisition book labelling",
+  "Module area cleanliness, appearance & demarcation",
+  "First aid box medicine & condition check",
+  "Garments keeping without process bin",
+  "Cleanliness of the furniture's, electrical equipment, roof & floor",
+  "Unnecessary item in the module area",
+  "Machine Alignment, height & thread stand standard",
+  "Machine caster wheel cleanliness",
+  "Water bottle & trash bin hanging area standard",
+  "Machine service card standard & Paddle rubber carpet position",
+  "Unnecessary item in process bin",
+  "Safety Guard (Finger & Eye guard)",
+  "Trimmer & scissor labelling with ID number & binding standard",
+  "Machine cleanliness (Feed dog/Inside dust free) & wire sorting",
+  "Shoe keeping bag standard & inside check randomly",
+  "Operator chair & Process bin condition check",
+  "In-line process bin using & location standard",
+  "ID card visibility & Mask availability of every person",
+  "Uncovered idle machine",
+  "Cleanliness & using standard of Iron table, Height & alignment standard",
+  "Iron Keeping Standard & Iron Table Pattern standard",
+  "Counter table register book Keeping Standard & Iron table mock up check",
+  "Mock Up check & Trim card availability For Quality table",
+  "Quality, Getup table height & alignment standard",
+  "Cupboard, files, register book etc. labelling & demarcation standard",
+  "Cleanliness of Quality Get up table & Module area",
+  "Water bottle, Shoe bag & Trash bin Standard",
+  "All the indication Board & Quality SOP maintaining & labelling standard",
+  "Hourly inspection board update & documentation standard",
+  "All process bin location, using standard & Condition",
+  "Machine traffic indicator standard & TLS board update",
+  "Unnecessary item in module area"
+];
+
+// Track open caption dropdown
+let openCaptionCellId = null;
+
+function toggleCaptionDropdown(cellId) {
+  if (openCaptionCellId === cellId) {
+    closeAllCaptionDropdowns();
+    return;
+  }
+  closeAllCaptionDropdowns();
+  openCaptionCellId = cellId;
+  const dd = document.getElementById('cd-' + cellId);
+  if (!dd) return;
+  renderCaptionOptions(cellId);
+  dd.classList.add('open');
+}
+
+function closeAllCaptionDropdowns() {
+  document.querySelectorAll('.caption-dropdown.open').forEach(el => el.classList.remove('open'));
+  openCaptionCellId = null;
+}
+
+function renderCaptionOptions(cellId) {
+  // Find current caption value
+  let curVal = '';
+  for (const s of slides) {
+    const c = s.cells.find(c => c.id === cellId);
+    if (c) { curVal = c.caption || ''; break; }
+  }
+  const dd = document.getElementById('cd-' + cellId);
+  if (!dd) return;
+  const body = dd.querySelector('.caption-options-body');
+  if (!body) return;
+  body.innerHTML = CAPTION_OPTIONS.map((opt, i) =>
+    `<div class="caption-option${curVal === opt ? ' selected' : ''}"
+          data-cellid="${cellId}" data-idx="${i}">
+      <span class="opt-num">${i+1}</span>
+      <span style="flex:1">${escHtml(opt)}</span>
+      <span class="opt-check">✔</span>
+    </div>`
+  ).join('');
+  body.onclick = function(e) {
+    const row = e.target.closest('.caption-option');
+    if (!row) return;
+    const idx = parseInt(row.dataset.idx, 10);
+    if (isNaN(idx)) return;
+    pickCaption(cellId, CAPTION_OPTIONS[idx]);
+  };
+}
+
+function pickCaption(cellId, val) {
+  for (const s of slides) {
+    const c = s.cells.find(c => c.id === cellId);
+    if (c) { c.caption = val; break; }
+  }
+  closeAllCaptionDropdowns();
+  renderAll();
+}
+
+function clearCaption(e, slideId, cellId) {
+  e.stopPropagation();
+  for (const s of slides) {
+    const c = s.cells.find(c => c.id === cellId);
+    if (c) { c.caption = ''; break; }
+  }
+  closeAllCaptionDropdowns();
+  renderAll();
+}
+
+// Close caption dropdowns on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.caption-field-wrap')) closeAllCaptionDropdowns();
+});
+
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAll() {
   const area = document.getElementById('slides-area');
@@ -525,9 +688,23 @@ function renderAll() {
               <div class="recent-body"></div>
             </div>
           </div>
-          <div>
+          <div class="caption-field-wrap">
             <label>Finding / Caption</label>
-            <textarea placeholder="e.g. Water Bottle Keeping is not standard" oninput="setField(${slide.id},${cell.id},'caption',this.value)">${escHtml(cell.caption)}</textarea>
+            <div class="caption-display ${cell.caption?'has-value':''}"
+                 id="cap-${cell.id}"
+                 onclick="toggleCaptionDropdown(${cell.id})">
+              ${cell.caption
+                ? `<span>${escHtml(cell.caption)}</span>`
+                : `<span class="placeholder-txt">Tap to select finding…</span>`}
+              <span class="chev">▾</span>
+            </div>
+            <div class="caption-dropdown" id="cd-${cell.id}">
+              <div class="caption-dropdown-header">
+                <span>Select Finding / Caption</span>
+                <button class="caption-clear-btn" onclick="clearCaption(event,${slide.id},${cell.id})">Clear</button>
+              </div>
+              <div class="caption-options-body"></div>
+            </div>
           </div>
         </div>`;
       grid.appendChild(d);
