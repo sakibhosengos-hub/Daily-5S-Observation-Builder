@@ -196,8 +196,8 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 <div class="app-header">
   <div class="logo-box">🔍</div>
   <div>
-    <h1>Daily <span>5S</span> Observation Builder</h1>
-    <p>Generates AFWL-style PowerPoint presentation</p>
+    <h1>Gemba Walk Report</h1>
+    <p>Daily 5S Observation Builder</p>
   </div>
 </div>
 
@@ -215,8 +215,16 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
         <input type="date" id="report-date">
       </div>
       <div class="meta-field">
-        <label>Location / Floor</label>
-        <input type="text" id="report-location" value="Sewing Production 3rd Floor" placeholder="e.g. Sewing Production 3rd Floor">
+      <label>Location</label>
+           <select>
+                   <option value="">Select Location</option>
+                   <option value="Knit Production 2nd Floor">Knit Production 2nd Floor</option>
+                   <option value="Knit Production 3rd Floor">Knit Production 3rd Floor</option>
+                   <option value="Cutting Section">Cutting Section</option>
+                   <option value="Fnishing Section">Fnishing Section</option>
+                   <option value="Lingerie 6th Floor">Lingerie 6th Floor</option>
+                   
+          </select>
       </div>
     </div>
   </div>
@@ -237,8 +245,8 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 <div class="bottom-bar">
   <div class="summary-txt"><strong id="sum-slides">0</strong> slides · <strong id="sum-findings">0</strong> findings</div>
   <div class="btn-group">
-    <button class="pdf-btn" onclick="generatePDF()">📄 Export PDF</button>
-    <button class="gen-btn" id="gen-btn" onclick="generatePPT()">📊 Generate PPT</button>
+    <button class="pdf-btn" onclick="generatePDF()">📄 Export PDF Report</button>
+    <button class="gen-btn" id="gen-btn" onclick="generatePPT()">📥 Download Pictures</button>
   </div>
 </div>
 
