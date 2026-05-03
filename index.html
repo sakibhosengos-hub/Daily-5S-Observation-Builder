@@ -107,6 +107,57 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 }
 .cell-fields textarea { resize: none; min-height: 52px; }
 
+/* ── RECENT SUGGESTIONS ─────────────────────────────────────────── */
+.line-field-wrap { position: relative; }
+
+.line-input-row {
+  display: flex; gap: 4px; align-items: center;
+}
+.line-input-row input { flex: 1; }
+
+.recent-toggle {
+  background: #e2e8f0; border: none; border-radius: 5px;
+  color: #475569; font-size: 11px; padding: 5px 7px;
+  cursor: pointer; white-space: nowrap; font-family: inherit;
+  transition: background 0.15s; flex-shrink: 0; line-height: 1;
+}
+.recent-toggle:hover { background: #cbd5e1; }
+.recent-toggle.active { background: #2176b5; color: white; }
+
+.recent-dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: white; border: 1px solid #cbd5e1; border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 999;
+  overflow: hidden; max-height: 180px; overflow-y: auto;
+}
+.recent-dropdown.open { display: block; }
+.recent-dropdown-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+  font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.recent-clear-btn {
+  background: none; border: none; color: #ef4444; font-size: 10px;
+  cursor: pointer; font-family: inherit; font-weight: 600; padding: 0;
+}
+.recent-clear-btn:hover { text-decoration: underline; }
+.recent-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; cursor: pointer; font-size: 12px; color: #334155;
+  transition: background 0.12s; gap: 6px;
+}
+.recent-item:hover { background: #eff6ff; color: #1d4ed8; }
+.recent-item-text { flex: 1; }
+.recent-item-del {
+  background: none; border: none; color: #94a3b8; font-size: 12px;
+  cursor: pointer; padding: 0 2px; line-height: 1;
+}
+.recent-item-del:hover { color: #ef4444; }
+.recent-empty {
+  padding: 12px 10px; font-size: 12px; color: #94a3b8; text-align: center; font-style: italic;
+}
+/* ────────────────────────────────────────────────────────────────── */
+
 .del-cell-btn {
   position: absolute; top: 6px; right: 6px; z-index: 3;
   background: rgba(220,38,38,0.8); color: white; border: none;
@@ -181,7 +232,6 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 .overlay-box strong { display: block; font-size: 15px; color: #1e293b; margin-bottom: 5px; }
 .overlay-box p { font-size: 13px; color: #64748b; }
 
-/* PDF print */
 #pdf-view { display: none; }
 @media print {
   body > *:not(#pdf-view) { display: none !important; }
@@ -215,16 +265,15 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
         <input type="date" id="report-date">
       </div>
       <div class="meta-field">
-      <label>Location</label>
-           <select>
-                   <option value="">Select Location</option>
-                   <option value="Knit Production 2nd Floor">Knit Production 2nd Floor</option>
-                   <option value="Knit Production 3rd Floor">Knit Production 3rd Floor</option>
-                   <option value="Cutting Section">Cutting Section</option>
-                   <option value="Fnishing Section">Fnishing Section</option>
-                   <option value="Lingerie 6th Floor">Lingerie 6th Floor</option>
-                   
-          </select>
+        <label>Location</label>
+        <select id="report-location">
+          <option value="">Select Location</option>
+          <option value="Knit Production 2nd Floor">Knit Production 2nd Floor</option>
+          <option value="Knit Production 3rd Floor">Knit Production 3rd Floor</option>
+          <option value="Cutting Section">Cutting Section</option>
+          <option value="Finishing Section">Finishing Section</option>
+          <option value="Lingerie 6th Floor">Lingerie 6th Floor</option>
+        </select>
       </div>
     </div>
   </div>
@@ -263,6 +312,121 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 <script>
 let slides = [];
 let idCtr = 0;
+
+// ── RECENT LINE ENTRIES ────────────────────────────────────────────────────
+const RECENT_KEY = 'afwl_recent_lines';
+const MAX_RECENT = 15;
+
+function getRecentLines() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveRecentLines(arr) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+function addRecentLine(val) {
+  val = val.trim();
+  if (!val) return;
+  let arr = getRecentLines().filter(x => x !== val);
+  arr.unshift(val);
+  if (arr.length > MAX_RECENT) arr = arr.slice(0, MAX_RECENT);
+  saveRecentLines(arr);
+}
+function removeRecentLine(val) {
+  saveRecentLines(getRecentLines().filter(x => x !== val));
+}
+function clearRecentLines() {
+  saveRecentLines([]);
+}
+
+// Track open dropdown id
+let openDropdownCellId = null;
+
+function toggleDropdown(cellId) {
+  if (openDropdownCellId === cellId) {
+    closeAllDropdowns();
+    return;
+  }
+  closeAllDropdowns();
+  openDropdownCellId = cellId;
+  const dd = document.getElementById('rd-' + cellId);
+  const btn = document.getElementById('rtb-' + cellId);
+  if (dd) { renderDropdownItems(cellId); dd.classList.add('open'); }
+  if (btn) btn.classList.add('active');
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.recent-dropdown.open').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('.recent-toggle.active').forEach(el => el.classList.remove('active'));
+  openDropdownCellId = null;
+}
+
+function renderDropdownItems(cellId) {
+  const dd = document.getElementById('rd-' + cellId);
+  if (!dd) return;
+  const items = getRecentLines();
+  const body = dd.querySelector('.recent-body');
+  if (!body) return;
+  if (items.length === 0) {
+    body.innerHTML = `<div class="recent-empty">No recent entries yet</div>`;
+    return;
+  }
+  body.innerHTML = items.map((item, idx) =>
+    `<div class="recent-item" data-cellid="${cellId}" data-idx="${idx}">
+      <span class="recent-item-text">${escHtml(item)}</span>
+      <button class="recent-item-del" data-cellid="${cellId}" data-idx="${idx}" title="Remove">✕</button>
+    </div>`
+  ).join('');
+
+  // Use event delegation — no inline onclick with dynamic strings
+  body.onclick = function(e) {
+    const items = getRecentLines();
+    const delBtn = e.target.closest('.recent-item-del');
+    if (delBtn) {
+      e.stopPropagation();
+      const idx = parseInt(delBtn.dataset.idx, 10);
+      if (!isNaN(idx) && items[idx] !== undefined) {
+        removeRecentLine(items[idx]);
+        renderDropdownItems(cellId);
+      }
+      return;
+    }
+    const row = e.target.closest('.recent-item');
+    if (row) {
+      const idx = parseInt(row.dataset.idx, 10);
+      if (!isNaN(idx) && items[idx] !== undefined) {
+        pickRecentLine(cellId, items[idx]);
+      }
+    }
+  };
+}
+
+function pickRecentLine(cellId, val) {
+  // Find which slide contains this cell
+  for (const s of slides) {
+    const c = s.cells.find(c => c.id === cellId);
+    if (c) {
+      c.line = val;
+      closeAllDropdowns();
+      renderAll();
+      return;
+    }
+  }
+}
+
+function deleteRecentItem(cellId, val) {
+  removeRecentLine(val);
+  renderDropdownItems(cellId);
+}
+
+function clearAllRecent(cellId) {
+  clearRecentLines();
+  renderDropdownItems(cellId);
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.line-field-wrap')) closeAllDropdowns();
+});
 
 // ── INIT ─────────────────────────────────────────────────────────────────
 (function init() {
@@ -332,9 +496,34 @@ function renderAll() {
         </div>
         <input type="file" accept="image/*" capture="environment" class="photo-input" id="pi-${cell.id}" onchange="handlePhoto(${slide.id},${cell.id},this)">
         <div class="cell-fields">
-          <div>
-            <label>Line / Location</label>
-            <input type="text" placeholder="e.g. Line 51" value="${escHtml(cell.line)}" oninput="setField(${slide.id},${cell.id},'line',this.value)">
+          <div class="line-field-wrap">
+            <label>Line / Table No.</label>
+            <div class="line-input-row">
+              <input
+                type="text"
+                placeholder="e.g. Line 51"
+                value="${escHtml(cell.line)}"
+                id="li-${cell.id}"
+                oninput="setField(${slide.id},${cell.id},'line',this.value)"
+                onblur="handleLineBlur(${cell.id})"
+                onkeydown="handleLineKey(event,${cell.id})"
+                autocomplete="off"
+              >
+              <button
+                class="recent-toggle"
+                id="rtb-${cell.id}"
+                type="button"
+                onclick="toggleDropdown(${cell.id})"
+                title="Recent entries"
+              >🕒</button>
+            </div>
+            <div class="recent-dropdown" id="rd-${cell.id}">
+              <div class="recent-dropdown-header">
+                <span>Recent</span>
+                <button class="recent-clear-btn" onclick="clearAllRecent(${cell.id})">Clear all</button>
+              </div>
+              <div class="recent-body"></div>
+            </div>
           </div>
           <div>
             <label>Finding / Caption</label>
@@ -345,6 +534,25 @@ function renderAll() {
     });
   });
   updateSummary();
+}
+
+function handleLineBlur(cellId) {
+  // Save to recent on blur (with short delay to allow click on dropdown)
+  setTimeout(() => {
+    const input = document.getElementById('li-' + cellId);
+    if (input && input.value.trim()) addRecentLine(input.value.trim());
+  }, 200);
+}
+
+function handleLineKey(e, cellId) {
+  if (e.key === 'Enter') {
+    const input = document.getElementById('li-' + cellId);
+    if (input && input.value.trim()) {
+      addRecentLine(input.value.trim());
+      closeAllDropdowns();
+    }
+  }
+  if (e.key === 'Escape') closeAllDropdowns();
 }
 
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -426,7 +634,6 @@ async function generatePPT() {
     }
 
     function addLogos(slide) {
-      // 5S logo – bottom left
       slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
         x:0.2, y:H-0.95, w:0.82, h:0.82,
         fill:{color:'f0f0f0'}, line:{color:BORDER,width:1}, rounding:0.1
@@ -435,7 +642,6 @@ async function generatePPT() {
         x:0.2, y:H-0.95, w:0.82, h:0.82,
         fontSize:20, bold:true, color:ORANGE, align:'center', valign:'middle', fontFace:'Calibri'
       });
-      // APEX logo – bottom right
       slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
         x:W-1.05, y:H-1.0, w:0.88, h:0.88,
         fill:{color:'f8f8f8'}, line:{color:BORDER,width:1}, rounding:0.1
@@ -446,13 +652,11 @@ async function generatePPT() {
       });
     }
 
-    // ── TITLE SLIDE ──────────────────────────────────────────────────────
     setProgress('Building title slide…');
     let slide = pptx.addSlide();
     slide.background = { color: WHITE };
     addBorder(slide);
 
-    // "Daily 5S Observation" – mixed color
     slide.addText([
       { text:'Daily ',      options:{ bold:true, color:'333333', fontSize:20 }},
       { text:'5S',          options:{ bold:true, color:ORANGE,   fontSize:20 }},
@@ -463,25 +667,20 @@ async function generatePPT() {
       x:0.4, y:1.85, w:9.2, h:0.95,
       fontSize:38, color:TEAL, align:'center', fontFace:'Calibri'
     });
-
     slide.addText(`Date :${dateDisp}`, {
       x:0.4, y:3.0, w:9.2, h:0.42,
       fontSize:16, color:'444444', align:'center', fontFace:'Calibri'
     });
-
     slide.addText(`Day: ${dayDisp}`, {
       x:0.4, y:3.48, w:9.2, h:0.38,
       fontSize:16, color:TEAL, align:'center', fontFace:'Calibri'
     });
-
     addLogos(slide);
 
-    // ── SECTION HEADER SLIDE ─────────────────────────────────────────────
     setProgress('Building section header…');
     slide = pptx.addSlide();
     slide.background = { color: WHITE };
     addBorder(slide);
-
     slide.addText(`Findings at ${company}`, {
       x:0.5, y:1.5, w:9, h:0.85,
       fontSize:34, bold:true, color:TEAL, align:'center', fontFace:'Calibri'
@@ -490,10 +689,8 @@ async function generatePPT() {
       x:0.5, y:2.5, w:9, h:0.7,
       fontSize:28, bold:true, color:TEAL, align:'center', fontFace:'Calibri'
     });
-
     addLogos(slide);
 
-    // ── FINDING SLIDES ───────────────────────────────────────────────────
     for (let si = 0; si < slides.length; si++) {
       setProgress(`Building finding slide ${si+1} of ${slides.length}…`);
       const slideData = slides[si];
@@ -508,7 +705,6 @@ async function generatePPT() {
       const cols = Math.min(count, 3);
       const rows = Math.ceil(count / 3);
 
-      // Grid geometry – leave bottom margin for logos
       const gx = 0.2, gy = 0.15;
       const gw = W - 0.4, gh = H - 0.25;
       const cw = gw / cols;
@@ -524,21 +720,14 @@ async function generatePPT() {
         const cy = gy + row * ch + pad;
         const iw = cw - pad * 2;
 
-        // Blue border frame
         slide.addShape(pptx.shapes.RECTANGLE, {
           x:cx, y:cy, w:iw, h:imgH,
           fill:{color:'f1f5f9'}, line:{color:'4a90d9', width:1.5}
         });
 
-        // Photo
         if (cell.photoData) {
           try {
-            slide.addImage({
-              data: cell.photoData,
-              x:cx, y:cy, w:iw, h:imgH,
-              sizing:{ type:'crop', w:iw, h:imgH }
-            });
-            // Re-draw border on top of image
+            slide.addImage({ data:cell.photoData, x:cx, y:cy, w:iw, h:imgH, sizing:{type:'crop',w:iw,h:imgH} });
             slide.addShape(pptx.shapes.RECTANGLE, {
               x:cx, y:cy, w:iw, h:imgH,
               fill:{type:'none'}, line:{color:'4a90d9', width:1.5}
@@ -546,7 +735,6 @@ async function generatePPT() {
           } catch(e) {}
         }
 
-        // Line badge overlay (dark strip at bottom of image)
         if (cell.line) {
           const badgeH = 0.26;
           slide.addShape(pptx.shapes.RECTANGLE, {
@@ -560,7 +748,6 @@ async function generatePPT() {
           });
         }
 
-        // Caption box below image
         const capY = cy + imgH + 0.03;
         slide.addShape(pptx.shapes.RECTANGLE, {
           x:cx, y:capY, w:iw, h:capH,
@@ -578,7 +765,6 @@ async function generatePPT() {
       addLogos(slide);
     }
 
-    // ── THANK YOU ────────────────────────────────────────────────────────
     setProgress('Building closing slide…');
     slide = pptx.addSlide();
     slide.background = { color: WHITE };
@@ -589,7 +775,6 @@ async function generatePPT() {
     });
     addLogos(slide);
 
-    // ── DOWNLOAD ─────────────────────────────────────────────────────────
     setProgress('Saving file…');
     const safeDateStr = (dateVal || new Date().toISOString().slice(0,10)).replace(/-/g,'_');
     const fileName = `AFWL_Daily_5S_Observation_${safeDateStr}.pptx`;
@@ -627,7 +812,6 @@ function generatePDF() {
     .pdf-slide:last-child { page-break-after:avoid; }
   </style>`;
 
-  // Title
   html += `<div class="pdf-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2%;">
     <div style="font-size:2.1vw;font-weight:700;color:#333;">Daily <span style="color:#e05c00;">5S</span> Observation</div>
     <div style="font-size:4vw;color:#2176b5;">${company}</div>
@@ -636,14 +820,12 @@ function generatePDF() {
     ${logo5s}${logoApex}
   </div>`;
 
-  // Section header
   html += `<div class="pdf-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2%;">
     <div style="font-size:3.4vw;font-weight:700;color:#2176b5;text-align:center;padding:0 4%;">Findings at ${company}</div>
     <div style="font-size:2.8vw;font-weight:700;color:#2176b5;text-align:center;">${location}</div>
     ${logo5s}${logoApex}
   </div>`;
 
-  // Finding slides
   slides.forEach(slideData => {
     const cells = slideData.cells;
     const cols = Math.min(cells.length, 3);
@@ -663,7 +845,6 @@ function generatePDF() {
     html += `</div>${logo5s}${logoApex}</div>`;
   });
 
-  // Thank You
   html += `<div class="pdf-slide" style="display:flex;align-items:center;justify-content:center;">
     <div style="font-size:6.5vw;font-weight:700;color:#f5a623;">Thank You……</div>
     ${logo5s}${logoApex}
