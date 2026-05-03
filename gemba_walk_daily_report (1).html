@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily 5S Observation – AFWL Style</title>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+.app-header {
+  background: linear-gradient(135deg, #1a4a7a 0%, #2176b5 100%);
+  color: white; padding: 16px 24px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.app-header .logo-box {
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.18); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.app-header h1 span { color: #fbbf24; }
+.app-header p { font-size: 12px; opacity: 0.72; margin-top: 2px; }
+
+.main { max-width: 980px; margin: 0 auto; padding: 20px 16px 80px; }
+
+.top-bar {
+  background: white; border-radius: 10px; border: 1px solid #e2e8f0;
+  padding: 12px 18px; margin-bottom: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: #64748b;
+}
+.top-bar strong { color: #1e293b; }
+
+.meta-card {
+  background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+  padding: 18px 20px; margin-bottom: 20px;
+}
+.meta-card h2 { font-size: 12px; font-weight: 700; color: #1a4a7a; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.07em; }
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .meta-grid { grid-template-columns: 1fr; } }
+.meta-field label { display: block; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.meta-field input, .meta-field select {
+  width: 100%; border: 1px solid #e2e8f0; border-radius: 7px;
+  padding: 8px 11px; font-size: 13px; color: #1e293b; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.meta-field input:focus { outline: none; border-color: #2176b5; box-shadow: 0 0 0 3px rgba(33,118,181,0.1); }
+
+.obs-group {
+  background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+  margin-bottom: 16px; overflow: hidden;
+}
+.obs-group-header {
+  background: #1a4a7a; color: white;
+  padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+}
+.obs-group-header span { font-size: 13px; font-weight: 700; }
+.obs-group-header .slide-label {
+  font-size: 11px; background: rgba(255,255,255,0.18);
+  padding: 3px 9px; border-radius: 20px;
+}
+.hdr-btns { display: flex; gap: 7px; align-items: center; }
+.hdr-btn {
+  background: rgba(255,255,255,0.18); color: white; border: none;
+  border-radius: 6px; padding: 4px 11px; font-size: 11px;
+  cursor: pointer; font-weight: 600; font-family: inherit; transition: background 0.15s;
+}
+.hdr-btn:hover { background: rgba(255,255,255,0.3); }
+.hdr-btn.del { background: rgba(220,38,38,0.55); }
+.hdr-btn.del:hover { background: rgba(220,38,38,0.8); }
+
+.obs-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 600px) { .obs-grid { grid-template-columns: 1fr; } }
+
+.obs-cell {
+  border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+  padding: 12px; position: relative;
+}
+.obs-cell:nth-child(3n) { border-right: none; }
+
+.photo-zone {
+  border: 2px dashed #b0c8e4; border-radius: 8px; cursor: pointer;
+  position: relative; overflow: hidden;
+  min-height: 140px; display: flex; align-items: center; justify-content: center;
+  background: #f8fafc; transition: all 0.2s; margin-bottom: 8px;
+}
+.photo-zone:hover { border-color: #2176b5; background: #eef6ff; }
+.photo-zone.has-photo { border-style: solid; border-color: #4a90d9; }
+.photo-zone img { width: 100%; height: 140px; object-fit: cover; display: block; border-radius: 6px; }
+.photo-placeholder { text-align: center; color: #94a3b8; padding: 16px; }
+.photo-placeholder .cam { font-size: 28px; margin-bottom: 6px; }
+.photo-placeholder p { font-size: 12px; }
+.photo-input { display: none; }
+
+.cell-fields { display: flex; flex-direction: column; gap: 7px; }
+.cell-fields label { font-size: 11px; font-weight: 600; color: #64748b; display: block; margin-bottom: 3px; }
+.cell-fields input, .cell-fields textarea {
+  width: 100%; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 6px 9px; font-size: 12px; font-family: inherit; color: #334155; transition: border-color 0.2s;
+}
+.cell-fields input:focus, .cell-fields textarea:focus {
+  outline: none; border-color: #2176b5;
+}
+.cell-fields textarea { resize: none; min-height: 52px; }
+
+.del-cell-btn {
+  position: absolute; top: 6px; right: 6px; z-index: 3;
+  background: rgba(220,38,38,0.8); color: white; border: none;
+  width: 20px; height: 20px; border-radius: 50%; font-size: 10px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s;
+}
+.obs-cell:hover .del-cell-btn { opacity: 1; }
+
+.add-row { margin-bottom: 16px; }
+.add-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 11px 16px; background: white; border: 2px dashed #b0c8e4;
+  border-radius: 10px; color: #2176b5; font-weight: 600; font-size: 13px;
+  cursor: pointer; transition: all 0.2s; font-family: inherit;
+}
+.add-btn:hover { background: #eef6ff; border-color: #2176b5; }
+
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: white; border-top: 1px solid #e2e8f0;
+  padding: 12px 24px; display: flex; gap: 10px; align-items: center;
+  justify-content: space-between; box-shadow: 0 -4px 16px rgba(0,0,0,0.07);
+  z-index: 100;
+}
+.summary-txt { font-size: 13px; color: #64748b; }
+.summary-txt strong { color: #1e293b; }
+.btn-group { display: flex; gap: 10px; }
+
+.gen-btn {
+  background: linear-gradient(135deg, #1a4a7a, #2176b5);
+  color: white; border: none; border-radius: 8px;
+  padding: 10px 22px; font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; gap: 7px;
+  transition: opacity 0.2s; font-family: inherit; white-space: nowrap;
+}
+.gen-btn:hover { opacity: 0.88; }
+.gen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.pdf-btn {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  color: white; border: none; border-radius: 8px;
+  padding: 10px 22px; font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; gap: 7px;
+  transition: opacity 0.2s; font-family: inherit; white-space: nowrap;
+}
+.pdf-btn:hover { opacity: 0.88; }
+
+.toast {
+  position: fixed; bottom: 72px; right: 24px;
+  background: #1e293b; color: white; padding: 11px 18px;
+  border-radius: 9px; font-size: 13px; font-weight: 500;
+  opacity: 0; transform: translateY(10px); transition: all 0.3s; z-index: 9999;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: #059669; }
+.toast.error { background: #dc2626; }
+
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 9998;
+  align-items: center; justify-content: center;
+}
+.overlay.show { display: flex; }
+.overlay-box { background: white; border-radius: 14px; padding: 32px 40px; text-align: center; }
+.spinner {
+  width: 46px; height: 46px; border: 4px solid #e2e8f0;
+  border-top-color: #2176b5; border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.overlay-box strong { display: block; font-size: 15px; color: #1e293b; margin-bottom: 5px; }
+.overlay-box p { font-size: 13px; color: #64748b; }
+
+/* PDF print */
+#pdf-view { display: none; }
+@media print {
+  body > *:not(#pdf-view) { display: none !important; }
+  #pdf-view { display: block !important; }
+  .pdf-slide { page-break-after: always; }
+  .pdf-slide:last-child { page-break-after: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="logo-box">🔍</div>
+  <div>
+    <h1>Daily <span>5S</span> Observation Builder</h1>
+    <p>Generates AFWL-style PowerPoint presentation</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="meta-card">
+    <h2>Report Info</h2>
+    <div class="meta-grid">
+      <div class="meta-field">
+        <label>Company Name</label>
+        <input type="text" id="company-name" value="Apex Fashion Wear Limited" placeholder="Company name">
+      </div>
+      <div class="meta-field">
+        <label>Date</label>
+        <input type="date" id="report-date">
+      </div>
+      <div class="meta-field">
+        <label>Location / Floor</label>
+        <input type="text" id="report-location" value="Sewing Production 3rd Floor" placeholder="e.g. Sewing Production 3rd Floor">
+      </div>
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <span>📅 <strong id="today-label"></strong></span>
+    <span id="slide-count-label">0 slides · 0 findings</span>
+  </div>
+
+  <div id="slides-area"></div>
+
+  <div class="add-row">
+    <button class="add-btn" onclick="addSlide()">＋ Add Finding Slide</button>
+  </div>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="summary-txt"><strong id="sum-slides">0</strong> slides · <strong id="sum-findings">0</strong> findings</div>
+  <div class="btn-group">
+    <button class="pdf-btn" onclick="generatePDF()">📄 Export PDF</button>
+    <button class="gen-btn" id="gen-btn" onclick="generatePPT()">📊 Generate PPT</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <div class="spinner"></div>
+    <strong>Building Presentation…</strong>
+    <p id="progress-msg">Processing slides</p>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="pdf-view"></div>
+
+<script>
+let slides = [];
+let idCtr = 0;
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+(function init() {
+  const today = new Date();
+  document.getElementById('today-label').textContent =
+    today.toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('report-date').value = today.toISOString().slice(0,10);
+  addSlide();
+})();
+
+// ── ADD / REMOVE ─────────────────────────────────────────────────────────
+function addSlide() {
+  const sid = ++idCtr;
+  const cells = Array.from({length:6}, () => ({ id:++idCtr, photoData:null, line:'', caption:'' }));
+  slides.push({ id:sid, cells });
+  renderAll();
+  setTimeout(() => {
+    const el = document.getElementById('slide-'+sid);
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }, 80);
+}
+
+function removeSlide(id) {
+  slides = slides.filter(s => s.id !== id);
+  renderAll();
+}
+
+function addCellToSlide(slideId) {
+  const s = slides.find(s => s.id === slideId);
+  if (s) { s.cells.push({ id:++idCtr, photoData:null, line:'', caption:'' }); renderAll(); }
+}
+
+function removeCell(slideId, cellId) {
+  const s = slides.find(s => s.id === slideId);
+  if (s) { s.cells = s.cells.filter(c => c.id !== cellId); renderAll(); }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderAll() {
+  const area = document.getElementById('slides-area');
+  area.innerHTML = '';
+  slides.forEach((slide, si) => {
+    const div = document.createElement('div');
+    div.className = 'obs-group';
+    div.id = 'slide-' + slide.id;
+    div.innerHTML = `
+      <div class="obs-group-header">
+        <span>Finding Slide ${si+1} &nbsp;<span class="slide-label">${slide.cells.length} photos</span></span>
+        <div class="hdr-btns">
+          <button class="hdr-btn" onclick="addCellToSlide(${slide.id})">+ Photo</button>
+          <button class="hdr-btn del" onclick="removeSlide(${slide.id})">✕ Remove</button>
+        </div>
+      </div>
+      <div class="obs-grid" id="grid-${slide.id}"></div>`;
+    area.appendChild(div);
+
+    const grid = document.getElementById('grid-' + slide.id);
+    slide.cells.forEach(cell => {
+      const d = document.createElement('div');
+      d.className = 'obs-cell';
+      d.innerHTML = `
+        <button class="del-cell-btn" onclick="removeCell(${slide.id},${cell.id})">✕</button>
+        <div class="photo-zone ${cell.photoData?'has-photo':''}" onclick="triggerPhoto(${cell.id})">
+          ${cell.photoData
+            ? `<img src="${cell.photoData}" alt="finding">`
+            : `<div class="photo-placeholder"><div class="cam">📷</div><p>Tap to add photo</p></div>`}
+        </div>
+        <input type="file" accept="image/*" capture="environment" class="photo-input" id="pi-${cell.id}" onchange="handlePhoto(${slide.id},${cell.id},this)">
+        <div class="cell-fields">
+          <div>
+            <label>Line / Location</label>
+            <input type="text" placeholder="e.g. Line 51" value="${escHtml(cell.line)}" oninput="setField(${slide.id},${cell.id},'line',this.value)">
+          </div>
+          <div>
+            <label>Finding / Caption</label>
+            <textarea placeholder="e.g. Water Bottle Keeping is not standard" oninput="setField(${slide.id},${cell.id},'caption',this.value)">${escHtml(cell.caption)}</textarea>
+          </div>
+        </div>`;
+      grid.appendChild(d);
+    });
+  });
+  updateSummary();
+}
+
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function triggerPhoto(id) { document.getElementById('pi-'+id).click(); }
+
+function handlePhoto(slideId, cellId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const s = slides.find(s => s.id === slideId);
+    if (!s) return;
+    const c = s.cells.find(c => c.id === cellId);
+    if (c) { c.photoData = e.target.result; renderAll(); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function setField(slideId, cellId, field, val) {
+  const s = slides.find(s => s.id === slideId);
+  if (s) { const c = s.cells.find(c => c.id === cellId); if (c) c[field] = val; }
+  updateSummary();
+}
+
+function updateSummary() {
+  const totalF = slides.reduce((n,s) => n + s.cells.filter(c => c.caption || c.photoData).length, 0);
+  document.getElementById('slide-count-label').textContent = `${slides.length} slide${slides.length!==1?'s':''} · ${totalF} findings`;
+  document.getElementById('sum-slides').textContent = slides.length;
+  document.getElementById('sum-findings').textContent = totalF;
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+function setProgress(msg) { document.getElementById('progress-msg').textContent = msg; }
+
+// ── META HELPERS ─────────────────────────────────────────────────────────
+function getMeta() {
+  const company  = document.getElementById('company-name').value || 'Apex Fashion Wear Limited';
+  const location = document.getElementById('report-location').value || 'Production Floor';
+  const dateVal  = document.getElementById('report-date').value;
+  const dateObj  = dateVal ? new Date(dateVal + 'T00:00:00') : new Date();
+  const dateDisp = dateObj.toLocaleDateString('en-GB');
+  const dayDisp  = dateObj.toLocaleDateString('en-GB', {weekday:'long'});
+  return { company, location, dateVal, dateObj, dateDisp, dayDisp };
+}
+
+// ── PPT GENERATION ────────────────────────────────────────────────────────
+async function generatePPT() {
+  if (slides.length === 0) { showToast('Add at least one finding slide first.', 'error'); return; }
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('gen-btn').disabled = true;
+
+  const { company, location, dateVal, dateDisp, dayDisp } = getMeta();
+
+  const TEAL  = '2176b5';
+  const WHITE = 'ffffff';
+  const GOLD  = 'f5a623';
+  const BORDER= 'd0d0d0';
+  const DARK  = '2c2c2c';
+  const NAVY  = '1a3a5c';
+  const ORANGE= 'e05c00';
+  const W = 10, H = 5.625;
+
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_16x9';
+    pptx.title = `Daily 5S Observation – ${company}`;
+
+    function addBorder(slide) {
+      slide.addShape(pptx.shapes.RECTANGLE, {
+        x:0.13, y:0.08, w:W-0.26, h:H-0.16,
+        fill:{type:'none'}, line:{color:BORDER, width:1.5}
+      });
+    }
+
+    function addLogos(slide) {
+      // 5S logo – bottom left
+      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+        x:0.2, y:H-0.95, w:0.82, h:0.82,
+        fill:{color:'f0f0f0'}, line:{color:BORDER,width:1}, rounding:0.1
+      });
+      slide.addText('5S', {
+        x:0.2, y:H-0.95, w:0.82, h:0.82,
+        fontSize:20, bold:true, color:ORANGE, align:'center', valign:'middle', fontFace:'Calibri'
+      });
+      // APEX logo – bottom right
+      slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+        x:W-1.05, y:H-1.0, w:0.88, h:0.88,
+        fill:{color:'f8f8f8'}, line:{color:BORDER,width:1}, rounding:0.1
+      });
+      slide.addText('APEX', {
+        x:W-1.05, y:H-1.0, w:0.88, h:0.88,
+        fontSize:11, bold:true, color:NAVY, align:'center', valign:'middle', fontFace:'Calibri'
+      });
+    }
+
+    // ── TITLE SLIDE ──────────────────────────────────────────────────────
+    setProgress('Building title slide…');
+    let slide = pptx.addSlide();
+    slide.background = { color: WHITE };
+    addBorder(slide);
+
+    // "Daily 5S Observation" – mixed color
+    slide.addText([
+      { text:'Daily ',      options:{ bold:true, color:'333333', fontSize:20 }},
+      { text:'5S',          options:{ bold:true, color:ORANGE,   fontSize:20 }},
+      { text:' Observation',options:{ bold:true, color:'333333', fontSize:20 }}
+    ], { x:0.4, y:1.2, w:9.2, h:0.5, align:'center', fontFace:'Calibri' });
+
+    slide.addText(company, {
+      x:0.4, y:1.85, w:9.2, h:0.95,
+      fontSize:38, color:TEAL, align:'center', fontFace:'Calibri'
+    });
+
+    slide.addText(`Date :${dateDisp}`, {
+      x:0.4, y:3.0, w:9.2, h:0.42,
+      fontSize:16, color:'444444', align:'center', fontFace:'Calibri'
+    });
+
+    slide.addText(`Day: ${dayDisp}`, {
+      x:0.4, y:3.48, w:9.2, h:0.38,
+      fontSize:16, color:TEAL, align:'center', fontFace:'Calibri'
+    });
+
+    addLogos(slide);
+
+    // ── SECTION HEADER SLIDE ─────────────────────────────────────────────
+    setProgress('Building section header…');
+    slide = pptx.addSlide();
+    slide.background = { color: WHITE };
+    addBorder(slide);
+
+    slide.addText(`Findings at ${company}`, {
+      x:0.5, y:1.5, w:9, h:0.85,
+      fontSize:34, bold:true, color:TEAL, align:'center', fontFace:'Calibri'
+    });
+    slide.addText(location, {
+      x:0.5, y:2.5, w:9, h:0.7,
+      fontSize:28, bold:true, color:TEAL, align:'center', fontFace:'Calibri'
+    });
+
+    addLogos(slide);
+
+    // ── FINDING SLIDES ───────────────────────────────────────────────────
+    for (let si = 0; si < slides.length; si++) {
+      setProgress(`Building finding slide ${si+1} of ${slides.length}…`);
+      const slideData = slides[si];
+      const cells = slideData.cells;
+
+      slide = pptx.addSlide();
+      slide.background = { color: WHITE };
+      addBorder(slide);
+
+      const validCells = cells.filter(c => c.photoData || c.line || c.caption);
+      const count = validCells.length || 1;
+      const cols = Math.min(count, 3);
+      const rows = Math.ceil(count / 3);
+
+      // Grid geometry – leave bottom margin for logos
+      const gx = 0.2, gy = 0.15;
+      const gw = W - 0.4, gh = H - 0.25;
+      const cw = gw / cols;
+      const ch = gh / rows;
+      const pad = 0.07;
+      const imgH = ch * 0.72;
+      const capH = ch - imgH - pad * 2 - 0.04;
+
+      validCells.forEach((cell, ci) => {
+        const col = ci % 3;
+        const row = Math.floor(ci / 3);
+        const cx = gx + col * cw + pad;
+        const cy = gy + row * ch + pad;
+        const iw = cw - pad * 2;
+
+        // Blue border frame
+        slide.addShape(pptx.shapes.RECTANGLE, {
+          x:cx, y:cy, w:iw, h:imgH,
+          fill:{color:'f1f5f9'}, line:{color:'4a90d9', width:1.5}
+        });
+
+        // Photo
+        if (cell.photoData) {
+          try {
+            slide.addImage({
+              data: cell.photoData,
+              x:cx, y:cy, w:iw, h:imgH,
+              sizing:{ type:'crop', w:iw, h:imgH }
+            });
+            // Re-draw border on top of image
+            slide.addShape(pptx.shapes.RECTANGLE, {
+              x:cx, y:cy, w:iw, h:imgH,
+              fill:{type:'none'}, line:{color:'4a90d9', width:1.5}
+            });
+          } catch(e) {}
+        }
+
+        // Line badge overlay (dark strip at bottom of image)
+        if (cell.line) {
+          const badgeH = 0.26;
+          slide.addShape(pptx.shapes.RECTANGLE, {
+            x:cx, y:cy + imgH - badgeH, w:iw, h:badgeH,
+            fill:{color:DARK}, line:{type:'none'}
+          });
+          slide.addText(cell.line, {
+            x:cx, y:cy + imgH - badgeH, w:iw, h:badgeH,
+            fontSize:10, bold:true, color:WHITE,
+            align:'center', valign:'middle', fontFace:'Calibri'
+          });
+        }
+
+        // Caption box below image
+        const capY = cy + imgH + 0.03;
+        slide.addShape(pptx.shapes.RECTANGLE, {
+          x:cx, y:capY, w:iw, h:capH,
+          fill:{color:WHITE}, line:{color:BORDER, width:0.75}
+        });
+        if (cell.caption) {
+          slide.addText(cell.caption, {
+            x:cx+0.04, y:capY, w:iw-0.08, h:capH,
+            fontSize:9, color:'333333',
+            align:'center', valign:'middle', fontFace:'Calibri', wrap:true
+          });
+        }
+      });
+
+      addLogos(slide);
+    }
+
+    // ── THANK YOU ────────────────────────────────────────────────────────
+    setProgress('Building closing slide…');
+    slide = pptx.addSlide();
+    slide.background = { color: WHITE };
+    addBorder(slide);
+    slide.addText('Thank You……', {
+      x:0.5, y:1.7, w:9, h:1.6,
+      fontSize:54, bold:true, color:GOLD, align:'center', fontFace:'Calibri'
+    });
+    addLogos(slide);
+
+    // ── DOWNLOAD ─────────────────────────────────────────────────────────
+    setProgress('Saving file…');
+    const safeDateStr = (dateVal || new Date().toISOString().slice(0,10)).replace(/-/g,'_');
+    const fileName = `AFWL_Daily_5S_Observation_${safeDateStr}.pptx`;
+    const blob = await pptx.write({ outputType:'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName; a.click();
+    URL.revokeObjectURL(url);
+
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('gen-btn').disabled = false;
+    showToast(`✅ ${fileName} downloaded!`, 'success');
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('gen-btn').disabled = false;
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+// ── PDF (PRINT) ───────────────────────────────────────────────────────────
+function generatePDF() {
+  if (slides.length === 0) { showToast('Add at least one finding slide first.', 'error'); return; }
+
+  const { company, location, dateDisp, dayDisp } = getMeta();
+
+  const logo5s  = `<div style="position:absolute;bottom:1.5%;left:1.2%;width:7%;aspect-ratio:1;background:#f0f0f0;border:1px solid #ccc;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.8vw;font-weight:700;color:#e05c00;">5S</div>`;
+  const logoApex= `<div style="position:absolute;bottom:1.5%;right:1.2%;width:7%;aspect-ratio:1;background:#f8f8f8;border:1px solid #ccc;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1vw;font-weight:700;color:#1a3a5c;letter-spacing:1px;">APEX</div>`;
+  const frame   = `border:1.5px solid #d0d0d0;border-radius:0;box-sizing:border-box;`;
+
+  let html = `<style>
+    #pdf-view * { font-family: Calibri, 'Segoe UI', sans-serif; }
+    .pdf-slide { width:100%; aspect-ratio:16/9; position:relative; background:white; overflow:hidden; page-break-after:always; display:block; ${frame} margin-bottom:8px; }
+    .pdf-slide:last-child { page-break-after:avoid; }
+  </style>`;
+
+  // Title
+  html += `<div class="pdf-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2%;">
+    <div style="font-size:2.1vw;font-weight:700;color:#333;">Daily <span style="color:#e05c00;">5S</span> Observation</div>
+    <div style="font-size:4vw;color:#2176b5;">${company}</div>
+    <div style="font-size:1.7vw;color:#444;margin-top:0.5%;">Date :${dateDisp}</div>
+    <div style="font-size:1.7vw;color:#2176b5;">Day: ${dayDisp}</div>
+    ${logo5s}${logoApex}
+  </div>`;
+
+  // Section header
+  html += `<div class="pdf-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2%;">
+    <div style="font-size:3.4vw;font-weight:700;color:#2176b5;text-align:center;padding:0 4%;">Findings at ${company}</div>
+    <div style="font-size:2.8vw;font-weight:700;color:#2176b5;text-align:center;">${location}</div>
+    ${logo5s}${logoApex}
+  </div>`;
+
+  // Finding slides
+  slides.forEach(slideData => {
+    const cells = slideData.cells;
+    const cols = Math.min(cells.length, 3);
+    html += `<div class="pdf-slide">
+      <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:0.4%;padding:0.8% 0.8% 10% 0.8%;height:100%;box-sizing:border-box;">`;
+    cells.forEach(cell => {
+      html += `<div style="display:flex;flex-direction:column;min-height:0;">
+        <div style="position:relative;flex:1;border:2px solid #4a90d9;margin:1px;overflow:hidden;min-height:0;">
+          ${cell.photoData
+            ? `<img src="${cell.photoData}" style="width:100%;height:100%;object-fit:cover;display:block;">`
+            : `<div style="width:100%;height:100%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:1.5vw;">📷</div>`}
+          ${cell.line ? `<div style="position:absolute;bottom:0;left:0;right:0;background:#2c2c2c;color:white;text-align:center;padding:1.5% 0;font-size:1.1vw;font-weight:700;">${cell.line}</div>` : ''}
+        </div>
+        <div style="border:1px solid #d0d0d0;margin:0 1px 1px;padding:1% 2%;text-align:center;font-size:0.95vw;color:#333;min-height:13%;display:flex;align-items:center;justify-content:center;line-height:1.3;">${cell.caption || ''}</div>
+      </div>`;
+    });
+    html += `</div>${logo5s}${logoApex}</div>`;
+  });
+
+  // Thank You
+  html += `<div class="pdf-slide" style="display:flex;align-items:center;justify-content:center;">
+    <div style="font-size:6.5vw;font-weight:700;color:#f5a623;">Thank You……</div>
+    ${logo5s}${logoApex}
+  </div>`;
+
+  document.getElementById('pdf-view').innerHTML = html;
+  window.print();
+}
+</script>
+</body>
+</html>
