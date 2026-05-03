@@ -52,11 +52,13 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 
 .obs-group {
   background: white; border-radius: 12px; border: 1px solid #e2e8f0;
-  margin-bottom: 16px; overflow: hidden;
+  margin-bottom: 16px; overflow: visible;
+  position: relative; z-index: 0;
 }
 .obs-group-header {
   background: #1a4a7a; color: white;
   padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+  border-radius: 12px 12px 0 0;
 }
 .obs-group-header span { font-size: 13px; font-weight: 700; }
 .obs-group-header .slide-label {
@@ -126,10 +128,11 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 }
 
 .caption-dropdown {
-  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  display: none; position: fixed;
   background: white; border: 1px solid #cbd5e1; border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.13); z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18); z-index: 99999;
   overflow: hidden; max-height: 220px; overflow-y: auto;
+  width: 260px;
 }
 .caption-dropdown.open { display: block; }
 .caption-dropdown-header {
@@ -564,9 +567,30 @@ function toggleCaptionDropdown(cellId) {
   }
   closeAllCaptionDropdowns();
   openCaptionCellId = cellId;
+  const trigger = document.getElementById('cap-' + cellId);
   const dd = document.getElementById('cd-' + cellId);
-  if (!dd) return;
+  if (!dd || !trigger) return;
   renderCaptionOptions(cellId);
+
+  // Position using fixed coords
+  const rect = trigger.getBoundingClientRect();
+  const ddH = 220; // max-height
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+
+  dd.style.width = Math.max(rect.width, 260) + 'px';
+  dd.style.left = rect.left + 'px';
+
+  if (spaceBelow >= ddH || spaceBelow >= spaceAbove) {
+    // Open downward
+    dd.style.top = (rect.bottom + 4) + 'px';
+    dd.style.bottom = 'auto';
+  } else {
+    // Open upward
+    dd.style.top = 'auto';
+    dd.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+  }
+
   dd.classList.add('open');
 }
 
@@ -624,8 +648,11 @@ function clearCaption(e, slideId, cellId) {
 
 // Close caption dropdowns on outside click
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.caption-field-wrap')) closeAllCaptionDropdowns();
+  if (!e.target.closest('.caption-field-wrap') && !e.target.closest('.caption-dropdown')) closeAllCaptionDropdowns();
 });
+
+// Close on scroll to avoid dropdown floating away
+window.addEventListener('scroll', closeAllCaptionDropdowns, true);
 
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAll() {
