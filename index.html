@@ -52,13 +52,11 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 
 .obs-group {
   background: white; border-radius: 12px; border: 1px solid #e2e8f0;
-  margin-bottom: 16px; overflow: visible;
-  position: relative; z-index: 0;
+  margin-bottom: 16px; overflow: hidden;
 }
 .obs-group-header {
   background: #1a4a7a; color: white;
   padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
-  border-radius: 12px 12px 0 0;
 }
 .obs-group-header span { font-size: 13px; font-weight: 700; }
 .obs-group-header .slide-label {
@@ -128,11 +126,10 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
 }
 
 .caption-dropdown {
-  display: none; position: fixed;
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   background: white; border: 1px solid #cbd5e1; border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.18); z-index: 99999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.13); z-index: 1000;
   overflow: hidden; max-height: 220px; overflow-y: auto;
-  width: 260px;
 }
 .caption-dropdown.open { display: block; }
 .caption-dropdown-header {
@@ -299,7 +296,7 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
   <div class="logo-box">🔍</div>
   <div>
     <h1>Gemba Walk Report</h1>
-    <p>Daily 5S Observation Builder</p>
+    <p>Apex Holdings Limited - GOS</p>
   </div>
 </div>
 
@@ -318,14 +315,7 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh;
       </div>
       <div class="meta-field">
         <label>Location</label>
-        <select id="report-location">
-          <option value="">Select Location</option>
-          <option value="Knit Production 2nd Floor">Knit Production 2nd Floor</option>
-          <option value="Knit Production 3rd Floor">Knit Production 3rd Floor</option>
-          <option value="Cutting Section">Cutting Section</option>
-          <option value="Finishing Section">Finishing Section</option>
-          <option value="Lingerie 6th Floor">Lingerie 6th Floor</option>
-        </select>
+        <input type="text" id="report-location" value="Production" placeholder="e.g. Knit Production (2nd Floor)">
       </div>
     </div>
   </div>
@@ -518,43 +508,7 @@ function removeCell(slideId, cellId) {
 
 // ── CAPTION OPTIONS ───────────────────────────────────────────────────────
 const CAPTION_OPTIONS = [
-  "All the indication board & poster maintaining the standard",
-  "Input trolley & In-line cupboard labelling & demarcation standard",
-  "Input trolley WIP & Accessories WIP check",
-  "Thread keeping standard",
-  "Sharp tool register update",
-  "File, Register book & Requisition book labelling",
-  "Module area cleanliness, appearance & demarcation",
-  "First aid box medicine & condition check",
-  "Garments keeping without process bin",
-  "Cleanliness of the furniture's, electrical equipment, roof & floor",
-  "Unnecessary item in the module area",
-  "Machine Alignment, height & thread stand standard",
-  "Machine caster wheel cleanliness",
-  "Water bottle & trash bin hanging area standard",
-  "Machine service card standard & Paddle rubber carpet position",
-  "Unnecessary item in process bin",
-  "Safety Guard (Finger & Eye guard)",
-  "Trimmer & scissor labelling with ID number & binding standard",
-  "Machine cleanliness (Feed dog/Inside dust free) & wire sorting",
-  "Shoe keeping bag standard & inside check randomly",
-  "Operator chair & Process bin condition check",
-  "In-line process bin using & location standard",
-  "ID card visibility & Mask availability of every person",
-  "Uncovered idle machine",
-  "Cleanliness & using standard of Iron table, Height & alignment standard",
-  "Iron Keeping Standard & Iron Table Pattern standard",
-  "Counter table register book Keeping Standard & Iron table mock up check",
-  "Mock Up check & Trim card availability For Quality table",
-  "Quality, Getup table height & alignment standard",
-  "Cupboard, files, register book etc. labelling & demarcation standard",
-  "Cleanliness of Quality Get up table & Module area",
-  "Water bottle, Shoe bag & Trash bin Standard",
-  "All the indication Board & Quality SOP maintaining & labelling standard",
-  "Hourly inspection board update & documentation standard",
-  "All process bin location, using standard & Condition",
-  "Machine traffic indicator standard & TLS board update",
-  "Unnecessary item in module area"
+"Unnecessary items stored on Input Table","Unnecessary items in Input Trolley","Excess items in Machine Module Area","Unnecessary items in Process Bin","Unnecessary items on Floor","Idle machines not properly covered","Items out of Demarcation","Improper wire management (sorting issue)","Counter sample not available at designated location","Overall workplace cleanliness below standard","Caster wheel cleanliness not maintained","Shoe storage not standardized","All Labeling Standard","Sharp Tool Binding wasn't Standard","Trash bin placement not standardized","Water Bottle Keeping Standard","TLS Indicator Keeping is not Standard","Iron placement not as per standard","White Garments Handling without Hand Gloves","Machine safety guard (eye protection) not properly maintained","TLS Board is not Updated Timely","Any Report Updated (Sharp Tool, TLS, DHU)"
 ];
 
 // Track open caption dropdown
@@ -567,30 +521,9 @@ function toggleCaptionDropdown(cellId) {
   }
   closeAllCaptionDropdowns();
   openCaptionCellId = cellId;
-  const trigger = document.getElementById('cap-' + cellId);
   const dd = document.getElementById('cd-' + cellId);
-  if (!dd || !trigger) return;
+  if (!dd) return;
   renderCaptionOptions(cellId);
-
-  // Position using fixed coords
-  const rect = trigger.getBoundingClientRect();
-  const ddH = 220; // max-height
-  const spaceBelow = window.innerHeight - rect.bottom;
-  const spaceAbove = rect.top;
-
-  dd.style.width = Math.max(rect.width, 260) + 'px';
-  dd.style.left = rect.left + 'px';
-
-  if (spaceBelow >= ddH || spaceBelow >= spaceAbove) {
-    // Open downward
-    dd.style.top = (rect.bottom + 4) + 'px';
-    dd.style.bottom = 'auto';
-  } else {
-    // Open upward
-    dd.style.top = 'auto';
-    dd.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
-  }
-
   dd.classList.add('open');
 }
 
@@ -648,11 +581,8 @@ function clearCaption(e, slideId, cellId) {
 
 // Close caption dropdowns on outside click
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.caption-field-wrap') && !e.target.closest('.caption-dropdown')) closeAllCaptionDropdowns();
+  if (!e.target.closest('.caption-field-wrap')) closeAllCaptionDropdowns();
 });
-
-// Close on scroll to avoid dropdown floating away
-window.addEventListener('scroll', closeAllCaptionDropdowns, true);
 
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAll() {
